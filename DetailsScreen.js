@@ -8,7 +8,9 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { fetchWikitravelData, fetchLLMDescription } from '../api';
+import { fetchWikitravelData, fetchLLMDescription } from './api';
+import { getInterests, AVAILABLE_INTERESTS } from './interestsStorage';
+import { getCachedAIDescription, cacheAIDescription } from './aiDescriptionCache';
 
 export default function DetailsScreen({ route }) {
   const { location, coordinates } = route.params;
@@ -27,13 +29,42 @@ export default function DetailsScreen({ route }) {
     try {
       const language = i18n.language === 'de' ? 'de' : 'en';
       
+      // Lade Benutzerinteressen
+      const userInterests = await getInterests();
+      const interestLabels = userInterests.map(id => 
+        AVAILABLE_INTERESTS.find(i => i.id === id)?.label
+      ).filter(Boolean);
+      
+      const interestContext = interestLabels.length > 0 
+        ? `Der Nutzer interessiert sich besonders für: ${interestLabels.join(', ')}. Fokussiere deine Beschreibung auf diese Aspekte.`
+        : '';
+      
+      // Prüfe Cache für AI-Beschreibung
+      const cachedAI = await getCachedAIDescription(location, userInterests);
+      
+      // Lade Wikipedia-Daten und AI-Beschreibung (falls nicht gecacht)
+      const wikiDataPromise = fetchWikitravelData(location, language);
+      const aiDescriptionPromise = cachedAI 
+        ? Promise.resolve(cachedAI)
+        : fetchLLMDescription(location, interestContext);
+      
       const [wikiData, aiDescription] = await Promise.all([
-        fetchWikitravelData(location, language),
-        fetchLLMDescription(location)
+        wikiDataPromise,
+        aiDescriptionPromise
       ]);
 
       setWikitravelData(wikiData);
       setLLMDescription(aiDescription);
+      
+      // Cache AI-Beschreibung wenn neu geladen
+      if (!cachedAI && aiDescription) {
+        await cacheAIDescription(location, userInterests, aiDescription);
+      }
+      
+      // Wenn keine Wikipedia-Daten vorhanden, zeige "Für dich interessant"
+      if (!wikiData.extract || wikiData.extract.includes('keine detaillierten Informationen') || wikiData.extract.includes('konnten nicht geladen werden')) {
+        setActiveTab('ai');
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -67,7 +98,7 @@ export default function DetailsScreen({ route }) {
           onPress={() => setActiveTab('wikitravel')}
         >
           <Text style={[styles.tabText, activeTab === 'wikitravel' && styles.activeTabText]}>
-            Wikitravel
+            Wikipedia
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -75,7 +106,7 @@ export default function DetailsScreen({ route }) {
           onPress={() => setActiveTab('ai')}
         >
           <Text style={[styles.tabText, activeTab === 'ai' && styles.activeTabText]}>
-            AI Description
+            Für dich interessant
           </Text>
         </TouchableOpacity>
       </View>
@@ -96,10 +127,13 @@ export default function DetailsScreen({ route }) {
                   </Text>
                 </View>
               )}
+              <View style={styles.sourceNote}>
+                <Text style={styles.sourceText}>📚 Quelle: Wikipedia</Text>
+              </View>
             </>
           ) : (
             <Text style={styles.noData}>
-              Keine Wikitravel-Daten für diesen Ort verfügbar.
+              Keine Wikipedia-Daten für diesen Ort verfügbar.
             </Text>
           )}
         </View>
@@ -107,28 +141,17 @@ export default function DetailsScreen({ route }) {
 
       {activeTab === 'ai' && (
         <View style={styles.content}>
-          <Text style={styles.sectionTitle}>KI-Generierte Beschreibung</Text>
+          <Text style={styles.sectionTitle}>Für dich interessant</Text>
           {llmDescription ? (
             <View style={styles.aiContainer}>
-              <Text style={styles.aiLabel}>🤖 AI Assistant</Text>
+              <Text style={styles.aiLabel}>💡 Personalisierte Beschreibung</Text>
               <Text style={styles.description}>{llmDescription}</Text>
-              <View style={styles.aiNotice}>
-                <Text style={styles.aiNoticeText}>
-                  💡 Hinweis: Um echte AI-Beschreibungen zu erhalten, fügen Sie Ihren OpenAI API-Schlüssel in api.js hinzu.
-                </Text>
-              </View>
             </View>
           ) : (
-            <Text style={styles.noData}>Keine KI-Beschreibung verfügbar.</Text>
+            <Text style={styles.noData}>Keine personalisierten Informationen verfügbar.</Text>
           )}
         </View>
       )}
-
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>{t('getDirections')}</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 }
@@ -274,5 +297,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  sourceNote: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  sourceText: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
   },
 });
