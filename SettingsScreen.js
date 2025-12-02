@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,36 @@ import {
   Switch
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { AVAILABLE_INTERESTS, getInterests, saveInterests } from './interestsStorage';
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const [language, setLanguage] = useState(i18n.language);
+  const [selectedInterests, setSelectedInterests] = useState([]);
+
+  useEffect(() => {
+    loadInterests();
+  }, []);
+
+  const loadInterests = async () => {
+    const interests = await getInterests();
+    setSelectedInterests(interests);
+  };
 
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
     setLanguage(lang);
+  };
+
+  const toggleInterest = async (interestId) => {
+    let newInterests;
+    if (selectedInterests.includes(interestId)) {
+      newInterests = selectedInterests.filter(id => id !== interestId);
+    } else {
+      newInterests = [...selectedInterests, interestId];
+    }
+    setSelectedInterests(newInterests);
+    await saveInterests(newInterests);
   };
 
   return (
@@ -50,6 +72,31 @@ export default function SettingsScreen() {
           </View>
           {language === 'en' && <Text style={styles.checkmark}>✓</Text>}
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Meine Interessen</Text>
+        <Text style={styles.interestsSubtitle}>
+          Wähle deine Interessen aus, um personalisierte Empfehlungen zu erhalten:
+        </Text>
+        {AVAILABLE_INTERESTS.map((interest) => (
+          <TouchableOpacity
+            key={interest.id}
+            style={[
+              styles.interestOption,
+              selectedInterests.includes(interest.id) && styles.selectedInterest
+            ]}
+            onPress={() => toggleInterest(interest.id)}
+          >
+            <View style={styles.interestInfo}>
+              <Text style={styles.interestIcon}>{interest.icon}</Text>
+              <Text style={styles.interestText}>{interest.label}</Text>
+            </View>
+            {selectedInterests.includes(interest.id) && (
+              <Text style={styles.checkmark}>✓</Text>
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
       <View style={styles.section}>
@@ -124,6 +171,40 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#007AFF',
     fontWeight: 'bold',
+  },
+  interestsSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  interestOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedInterest: {
+    backgroundColor: '#E8F4FF',
+    borderColor: '#007AFF',
+  },
+  interestInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  interestIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  interestText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '400',
   },
   infoCard: {
     flexDirection: 'row',

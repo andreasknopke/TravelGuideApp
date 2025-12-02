@@ -7,6 +7,7 @@ const resources = {
       appName: 'Travel Guide',
       home: 'Home',
       map: 'Map',
+      favorites: 'Favorites',
       settings: 'Settings',
       nearbyAttractions: 'Nearby Attractions',
       searchPlaceholder: 'Search city or attraction...',
@@ -33,6 +34,7 @@ const resources = {
       appName: 'Reiseführer',
       home: 'Start',
       map: 'Karte',
+      favorites: 'Favoriten',
       settings: 'Einstellungen',
       nearbyAttractions: 'Sehenswürdigkeiten in der Nähe',
       searchPlaceholder: 'Stadt oder Sehenswürdigkeit suchen...',
@@ -62,6 +64,7 @@ i18n
     resources,
     lng: 'de',
     fallbackLng: 'en',
+    compatibilityJSON: 'v3',
     interpolation: {
       escapeValue: false
     }

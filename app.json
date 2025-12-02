@@ -4,10 +4,8 @@
     "slug": "travel-guide-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -22,18 +20,16 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "com.travelguide.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro"
     },
     "plugins": [
       [
@@ -42,6 +38,11 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Travel Guide to use your location to find nearby attractions."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4d8cb32c-33fe-44f3-b4ee-1870be3d1055"
+      }
+    }
   }
 }

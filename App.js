@@ -10,7 +10,9 @@ import './i18n';
 import HomeScreen from './HomeScreen';
 import MapScreen from './MapScreen';
 import DetailsScreen from './DetailsScreen';
+import WebViewScreen from './WebViewScreen';
 import SettingsScreen from './SettingsScreen';
+import FavoritesScreen from './FavoritesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,6 +42,14 @@ function HomeTabs() {
         options={{
           tabBarLabel: t('map'),
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🗺️</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="FavoritesTab"
+        component={FavoritesScreen}
+        options={{
+          tabBarLabel: t('favorites'),
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>❤️</Text>,
         }}
       />
       <Tab.Screen
@@ -73,6 +83,14 @@ export default function App() {
             component={DetailsScreen}
             options={{
               headerTitle: t('viewDetails'),
+              headerBackTitle: t('home'),
+            }}
+          />
+          <Stack.Screen
+            name="WebView"
+            component={WebViewScreen}
+            options={{
+              headerTitle: 'Wikitravel/Wikipedia',
               headerBackTitle: t('home'),
             }}
           />
